@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=800, height=480, initial-scale=1.0">
   <title>תחזית גלים שבועית – תל אביב</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600&display=swap" rel="stylesheet">
@@ -12,64 +12,76 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; }
 
-    body {
+    html, body {
+      width: 800px;
+      height: 480px;
+      overflow: hidden;
       margin: 0;
       padding: 0;
+    }
+
+    body {
       font-family: 'Assistant', Arial, sans-serif;
       direction: rtl;
       background: #eef5ff;
       color: #444;
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      align-items: center;
     }
 
+    /* ── header bar ── */
     header {
-      width: 100%;
-      max-width: 700px;
-      padding: 20px 16px 8px;
-      text-align: center;
+      flex-shrink: 0;
+      height: 48px;
+      padding: 0 16px;
+      background: #fff;
+      border-bottom: 1px solid #dde8f5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
 
     header h1 {
-      margin: 0 0 4px;
-      font-size: 22px;
+      margin: 0;
+      font-size: 18px;
       font-weight: 600;
       color: #2595dc;
+      white-space: nowrap;
     }
 
-    header p {
-      margin: 0;
-      font-size: 12px;
-      color: #999;
+    #updated-label {
+      font-size: 11px;
+      color: #aaa;
+      white-space: nowrap;
     }
 
+    /* ── main card ── */
     #card {
-      width: 100%;
-      max-width: 700px;
-      margin: 12px 16px;
+      flex: 1 1 0;
+      min-height: 0;
+      margin: 8px 10px;
       background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      border-radius: 10px;
+      box-shadow: 0 1px 8px rgba(0,0,0,0.07);
       overflow: hidden;
-      min-height: 120px;
+      display: flex;
+      flex-direction: column;
     }
 
     /* ── loading / error states ── */
     #state {
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 40px;
       gap: 10px;
-      font-size: 15px;
+      font-size: 14px;
       color: #888;
     }
 
     .spinner {
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       border: 3px solid #d0e8f8;
       border-top-color: #2595dc;
       border-radius: 50%;
@@ -82,10 +94,20 @@
     #state.error { color: #c33; }
     #state.error .spinner { display: none; }
 
-    /* ── injected gosurf styles ── */
+    /* ── injected gosurf content ── */
     #weekly-wrap {
-      padding: 4px 0 12px;
-      overflow-x: auto;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 4px 0 0;
+    }
+
+    /* scale the injected 595-px wide content to fill available width */
+    #weekly-wrap > #website_forecast_weekly_cont {
+      transform-origin: top center;
     }
 
     #weekly-wrap .fw  { width: 100%; }
@@ -95,23 +117,19 @@
     #weekly-wrap .top10 { margin-top: 10px; }
     #weekly-wrap .bottom10 { margin-bottom: 10px; }
 
-    /* scale the 595-px fixed-width table down on narrow screens */
-    @media (max-width: 640px) {
-      #weekly-wrap .rightdiv > div {
-        transform-origin: top right;
-        transform: scale(0.75);
-        width: 133.33%;           /* compensate for 0.75 scale */
-      }
-    }
-
-    /* ── footer controls ── */
+    /* ── footer bar ── */
     footer {
-      margin: 4px 0 20px;
+      flex-shrink: 0;
+      height: 34px;
+      padding: 0 14px;
       display: flex;
       align-items: center;
+      justify-content: flex-end;
       gap: 12px;
-      font-size: 12px;
+      font-size: 11px;
       color: #bbb;
+      border-top: 1px solid #dde8f5;
+      background: #fff;
     }
 
     footer a { color: #2595dc; text-decoration: none; }
@@ -122,8 +140,8 @@
       border: 1px solid #2595dc;
       color: #2595dc;
       border-radius: 20px;
-      padding: 4px 14px;
-      font-size: 12px;
+      padding: 3px 12px;
+      font-size: 11px;
       cursor: pointer;
       font-family: inherit;
       transition: background 0.15s;
@@ -136,7 +154,7 @@
 
   <header>
     <h1>תחזית גלים שבועית – תל אביב</h1>
-    <p id="updated-label">טוען...</p>
+    <span id="updated-label">טוען...</span>
   </header>
 
   <div id="card">
@@ -145,8 +163,8 @@
   </div>
 
   <footer>
-    <button id="refresh-btn" onclick="loadForecast()">רענן</button>
     <span>מקור: <a href="https://gosurf.co.il/forecast/tel-aviv" target="_blank" rel="noopener">GoSurf</a></span>
+    <button id="refresh-btn" onclick="loadForecast()">רענן</button>
   </footer>
 
   <script>
@@ -215,7 +233,16 @@
         // Inject HTML
         wrap.innerHTML = weekly.outerHTML;
         state.style.display = 'none';
-        wrap.style.display = 'block';
+        wrap.style.display = 'flex';
+
+        // Scale injected content to fill the card width (GoSurf table ≈ 595 px wide)
+        const inner = wrap.firstElementChild;
+        if (inner) {
+          const scale = Math.min(wrap.clientWidth / inner.scrollWidth, 1.35);
+          inner.style.transformOrigin = 'top center';
+          inner.style.transform = `scale(${scale})`;
+          inner.style.marginBottom = `${inner.scrollHeight * (scale - 1)}px`;
+        }
 
         // Run chart script (Chart.js v2 must be loaded first – it is, via <head>)
         if (chartSrc) {

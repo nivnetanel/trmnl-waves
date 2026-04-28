@@ -171,19 +171,9 @@
     const TARGET = 'https://gosurf.co.il/forecast/tel-aviv';
 
     async function fetchHTML(url) {
-      // Try allorigins (returns JSON wrapper)
-      try {
-        const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(url), { cache: 'no-store' });
-        if (r.ok) {
-          const j = await r.json();
-          if (j && j.contents) return j.contents;
-        }
-      } catch (_) {}
-
-      // Fallback: corsproxy.io (returns raw HTML with CORS headers)
-      const r2 = await fetch('https://corsproxy.io/?' + encodeURIComponent(url), { cache: 'no-store' });
-      if (!r2.ok) throw new Error('proxy error ' + r2.status);
-      return r2.text();
+      const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(url), { cache: 'no-store' });
+      if (!r.ok) throw new Error('proxy error ' + r.status);
+      return r.text();
     }
 
     let activeChart = null;

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>תחזית גלים שבועית – תל אביב</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600&display=swap" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@0.7.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Assistant', Arial, sans-serif;
+      direction: rtl;
+      background: #eef5ff;
+      color: #444;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      width: 100%;
+      max-width: 700px;
+      padding: 20px 16px 8px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0 0 4px;
+      font-size: 22px;
+      font-weight: 600;
+      color: #2595dc;
+    }
+
+    header p {
+      margin: 0;
+      font-size: 12px;
+      color: #999;
+    }
+
+    #card {
+      width: 100%;
+      max-width: 700px;
+      margin: 12px 16px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      overflow: hidden;
+      min-height: 120px;
+    }
+
+    /* ── loading / error states ── */
+    #state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      gap: 10px;
+      font-size: 15px;
+      color: #888;
+    }
+
+    .spinner {
+      width: 22px;
+      height: 22px;
+      border: 3px solid #d0e8f8;
+      border-top-color: #2595dc;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #state.error { color: #c33; }
+    #state.error .spinner { display: none; }
+
+    /* ── injected gosurf styles ── */
+    #weekly-wrap {
+      padding: 4px 0 12px;
+      overflow-x: auto;
+    }
+
+    #weekly-wrap .fw  { width: 100%; }
+    #weekly-wrap .rightdiv div { float: right; }
+    #weekly-wrap .rightdiv::after { content: ''; display: table; clear: both; }
+    #weekly-wrap .top5  { margin-top: 5px; }
+    #weekly-wrap .top10 { margin-top: 10px; }
+    #weekly-wrap .bottom10 { margin-bottom: 10px; }
+
+    /* scale the 595-px fixed-width table down on narrow screens */
+    @media (max-width: 640px) {
+      #weekly-wrap .rightdiv > div {
+        transform-origin: top right;
+        transform: scale(0.75);
+        width: 133.33%;           /* compensate for 0.75 scale */
+      }
+    }
+
+    /* ── footer controls ── */
+    footer {
+      margin: 4px 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: #bbb;
+    }
+
+    footer a { color: #2595dc; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    #refresh-btn {
+      background: none;
+      border: 1px solid #2595dc;
+      color: #2595dc;
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    #refresh-btn:hover { background: #e8f3fd; }
+    #refresh-btn:disabled { opacity: 0.5; cursor: default; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>תחזית גלים שבועית – תל אביב</h1>
+    <p id="updated-label">טוען...</p>
+  </header>
+
+  <div id="card">
+    <div id="state"><span class="spinner"></span> טוען תחזית...</div>
+    <div id="weekly-wrap" style="display:none"></div>
+  </div>
+
+  <footer>
+    <button id="refresh-btn" onclick="loadForecast()">רענן</button>
+    <span>מקור: <a href="https://gosurf.co.il/forecast/tel-aviv" target="_blank" rel="noopener">GoSurf</a></span>
+  </footer>
+
+  <script>
+    const TARGET = 'https://gosurf.co.il/forecast/tel-aviv';
+
+    async function fetchHTML(url) {
+      // Try allorigins (returns JSON wrapper)
+      try {
+        const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(url), { cache: 'no-store' });
+        if (r.ok) {
+          const j = await r.json();
+          if (j && j.contents) return j.contents;
+        }
+      } catch (_) {}
+
+      // Fallback: corsproxy.io (returns raw HTML with CORS headers)
+      const r2 = await fetch('https://corsproxy.io/?' + encodeURIComponent(url), { cache: 'no-store' });
+      if (!r2.ok) throw new Error('proxy error ' + r2.status);
+      return r2.text();
+    }
+
+    let activeChart = null;
+
+    async function loadForecast() {
+      const state   = document.getElementById('state');
+      const wrap    = document.getElementById('weekly-wrap');
+      const label   = document.getElementById('updated-label');
+      const btn     = document.getElementById('refresh-btn');
+
+      // Show loading
+      btn.disabled = true;
+      wrap.style.display = 'none';
+      state.className = '';
+      state.innerHTML = '<span class="spinner"></span> טוען תחזית...';
+      state.style.display = 'flex';
+
+      // Destroy previous chart to avoid "canvas already in use" error
+      if (activeChart) { activeChart.destroy(); activeChart = null; }
+
+      try {
+        const html = await fetchHTML(TARGET);
+        const doc  = new DOMParser().parseFromString(html, 'text/html');
+
+        const weekly = doc.getElementById('website_forecast_weekly_cont');
+        if (!weekly) throw new Error('weekly_cont not found in response');
+
+        // Rewrite relative URLs → absolute
+        weekly.querySelectorAll('[src]').forEach(el => {
+          const s = el.getAttribute('src');
+          if (s && s.startsWith('/')) el.setAttribute('src', 'https://gosurf.co.il' + s);
+        });
+        weekly.querySelectorAll('[href]').forEach(el => {
+          const h = el.getAttribute('href');
+          if (h && h.startsWith('/')) el.setAttribute('href', 'https://gosurf.co.il' + h);
+        });
+
+        // Find the inline chart script that follows weekly_cont
+        let chartSrc = null;
+        for (const s of doc.querySelectorAll('script')) {
+          if (s.textContent.includes('weeklyData') && s.textContent.includes('myChart')) {
+            chartSrc = s.textContent;
+            break;
+          }
+        }
+
+        // Inject HTML
+        wrap.innerHTML = weekly.outerHTML;
+        state.style.display = 'none';
+        wrap.style.display = 'block';
+
+        // Run chart script (Chart.js v2 must be loaded first – it is, via <head>)
+        if (chartSrc) {
+          // Capture the chart instance so we can destroy it on next refresh
+          const patched = chartSrc.replace(
+            /var myChart\s*=\s*new Chart\(/,
+            'activeChart = window.myChart = new Chart('
+          );
+          const tag = document.createElement('script');
+          tag.textContent = patched;
+          document.body.appendChild(tag);
+        }
+
+        label.textContent = 'עודכן: ' + new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+
+      } catch (err) {
+        state.className = 'error';
+        state.innerHTML = '⚠️ שגיאה בטעינת הנתונים – <button class="refresh-btn" onclick="loadForecast()" style="margin-right:6px">נסה שוב</button>';
+        label.textContent = 'טעינה נכשלה';
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    loadForecast();
+    // Auto-refresh every 30 minutes
+    setInterval(loadForecast, 30 * 60 * 1000);
+  </script>
+</body>
+</html>

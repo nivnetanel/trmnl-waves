@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>TRMNL Preview – תחזית גלים</title>
+  <style>
+    /* ── outer wrapper: simulates the physical TRMNL bezel ── */
+    body {
+      margin: 0;
+      background: #444;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      gap: 10px;
+    }
+
+    .bezel-label {
+      color: #999;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .bezel {
+      background: #1a1a1a;
+      border-radius: 20px;
+      padding: 24px 28px 36px;
+      box-shadow: 0 10px 50px rgba(0,0,0,0.7);
+    }
+
+    /* ── the e-ink screen: THIS is what gets screenshot'd ── */
+    #screen {
+      width: 800px;
+      height: 480px;
+      background: #fff;
+      overflow: hidden;
+      color: #000;
+      font-family: Arial, 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 22px 16px;
+      box-sizing: border-box;
+      direction: rtl;
+      /* e-ink: no anti-aliasing tricks, pure black/white */
+      -webkit-font-smoothing: none;
+    }
+
+    /* ── HEADER ── */
+    .hdr {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      border-bottom: 2.5px solid #000;
+      padding-bottom: 10px;
+      margin-bottom: 16px;
+      flex-shrink: 0;
+    }
+    .hdr-title {
+      font-size: 21px;
+      font-weight: 900;
+      letter-spacing: -0.3px;
+      margin: 0;
+    }
+    .hdr-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .hdr-updated {
+      font-size: 11px;
+      color: #555;
+    }
+    /* wave icon SVG inline */
+    .wave-icon {
+      width: 28px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    /* ── 7-DAY GRID ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 9px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .card {
+      border: 2px solid #000;
+      border-radius: 6px;
+      padding: 9px 4px 7px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    .card.today {
+      background: #000;
+      color: #fff;
+    }
+
+    .c-day {
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .c-sep {
+      width: 60%;
+      height: 1px;
+      background: currentColor;
+      opacity: 0.3;
+      margin: 6px 0 5px;
+    }
+
+    .c-height {
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .c-unit {
+      font-size: 10px;
+      opacity: 0.6;
+      margin-top: 1px;
+    }
+
+    .c-sep2 {
+      width: 60%;
+      height: 1px;
+      background: currentColor;
+      opacity: 0.2;
+      margin: 6px 0 5px;
+    }
+
+    .c-stars {
+      font-size: 10px;
+      letter-spacing: 0.5px;
+      line-height: 1;
+    }
+
+    .c-wind {
+      font-size: 10px;
+      margin-top: 5px;
+      text-align: center;
+      line-height: 1.3;
+      opacity: 0.8;
+    }
+
+    .c-period {
+      font-size: 10px;
+      opacity: 0.5;
+      margin-top: 3px;
+    }
+
+    /* ── FOOTER ── */
+    .ftr {
+      flex-shrink: 0;
+      margin-top: 14px;
+      border-top: 1px solid #ccc;
+      padding-top: 7px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      color: #777;
+    }
+    .ftr-brand {
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #bbb;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bezel-label">TRMNL — webhook image · 800 × 480 · e-ink</div>
+
+<div class="bezel">
+  <!-- ↓ screenshot this element at 800×480 and POST as PNG to TRMNL webhook -->
+  <div id="screen">
+
+    <div class="hdr">
+      <span class="hdr-title">תחזית גלים שבועית — תל אביב</span>
+      <div class="hdr-right">
+        <span class="hdr-updated">עודכן 07:00</span>
+        <!-- inline SVG wave icon, no external deps -->
+        <svg class="wave-icon" viewBox="0 0 28 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1 10 C4 4, 7 4, 10 8 C13 12, 16 12, 19 8 C22 4, 25 4, 27 7"
+                stroke="#000" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="grid">
+
+      <div class="card today">
+        <div class="c-day">ד׳<br>היום</div>
+        <div class="c-sep"></div>
+        <div class="c-height">1.2</div>
+        <div class="c-unit">מטר</div>
+        <div class="c-sep2"></div>
+        <div class="c-stars">★★★☆☆</div>
+        <div class="c-wind">↗ 18<br>קמ״ש</div>
+        <div class="c-period">8 שנ׳</div>
+      </div>
+
+      <div class="card">
+        <div class="c-day">ה׳</div>
+        <div class="c-sep"></div>
+        <div class="c-height">0.9</div>
+        <div class="c-unit">מטר</div>
+        <div class="c-sep2"></div>
+        <div class="c-stars">★★☆☆☆</div>
+        <div class="c-wind">↑ 22<br>קמ״ש</div>
+        <div class="c-period">7 שנ׳</div>
+      </div>
+
+      <div class="card">
+        <div class="c-day">ו׳</div>
+        <div class="c-sep"></div>
+        <div class="c-height">1.5</div>
+        <div class="c-unit">מטר</div>
+        <div class="c-sep2"></div>
+        <div class="c-stars">★★★★☆</div>
+        <div class="c-wind">↗ 14<br>קמ״ש</div>
+        <div class="c-period">9 שנ׳</div>
+      </div>
+
+      <div class="card">
+        <div class="c-day">ש׳</div>
+        <div class="c-sep"></div>
+        <div class="c-height">1.8</div>
+        <div class="c-unit">מטר</div>
+        <div class="c-sep2"></div>
+        <div class="c-stars">★★★★★</div>
+        <div class="c-wind">→ 10<br>קמ״ש</div>
+        <div class="c-period">10 שנ׳</div>
+      </div>
+
+      <div class="card">
+        <div class="c-day">א׳</div>
+        <div class="c-sep"></div>
+        <div class="c-height">1.4</div>
+        <div class="c-unit">מטר</div>
+        <div class="c-sep2"></div>
+        <div class="c-stars">★★★☆☆</div>
+        <div class="c-wind">↗ 16<br>קמ״ש</div>
+        <div class="c-period">8 שנ׳</div>
+      </div>
+
+      <div class="card">
+        <div class="c-day">ב׳</div>
+        <div class="c-sep"></div>
+        <div class="c-height">1.0</div>
+        <div class="c-unit">מטר</div>
+        <div class="c-sep2"></div>
+        <div class="c-stars">★★☆☆☆</div>
+        <div class="c-wind">↑ 25<br>קמ״ש</div>
+        <div class="c-period">7 שנ׳</div>
+      </div>
+
+      <div class="card">
+        <div class="c-day">ג׳</div>
+        <div class="c-sep"></div>
+        <div class="c-height">0.7</div>
+        <div class="c-unit">מטר</div>
+        <div class="c-sep2"></div>
+        <div class="c-stars">★☆☆☆☆</div>
+        <div class="c-wind">↖ 28<br>קמ״ש</div>
+        <div class="c-period">6 שנ׳</div>
+      </div>
+
+    </div><!-- /grid -->
+
+    <div class="ftr">
+      <span>מקור: gosurf.co.il · מרענן פעמיים ביום</span>
+      <span class="ftr-brand">TRMNL</span>
+    </div>
+
+  </div><!-- /#screen — end of screenshot target -->
+</div>
+
+<div class="bezel-label">sample data — not live</div>
+
+<!--
+  PIPELINE:
+    1. Backend scrapes GoSurf → fills in real data
+    2. Puppeteer screenshots #screen at 800×480 → image.png
+    3. POST image.png to TRMNL webhook:
+         curl -X POST -H "Content-Type: image/png" \
+              --data-binary @image.png \
+              "YOUR_WEBHOOK_URL"
+    4. GitHub Actions runs this twice a day
+-->
+
+</body>
+</html>

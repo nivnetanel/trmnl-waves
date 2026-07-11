@@ -1,0 +1,14 @@
+{
+  "name": "trmnl-waves",
+  "version": "1.0.0",
+  "description": "TRMNL plugin — weekly surf forecast for Tel Aviv",
+  "main": "run.js",
+  "scripts": {
+    "start": "node run.js"
+  },
+  "dependencies": {
+    "jsdom": "^25.0.0",
+    "node-fetch": "^2.7.0",
+    "puppeteer": "^22.0.0"
+  }
+}

@@ -1,0 +1,4 @@
+forecast.png
+__pycache__/
+*.py[cod]
+.env
